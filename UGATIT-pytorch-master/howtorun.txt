@@ -1,0 +1,10 @@
+python main.py --dataset selfie2anime
+python main.py --dataset selfie2anime --resume
+
+python main.py --dataset photo2portrait
+python main.py --dataset photo2portrait --resume
+
+python main.py --dataset horse2zebra
+python main.py --dataset horse2zebra --resume
+
+

@@ -1,0 +1,8 @@
+python train.py --config configs/selfie2anime.yaml
+python train.py --config --resume configs/selfie2anime.yaml
+
+python train.py --config configs/horse2zebra.yaml
+python train.py --config --resume configs/horse2zebra.yaml
+
+python train.py --config configs/photo2portrait.yaml
+python train.py --config --resume configs/photo2portrait.yaml

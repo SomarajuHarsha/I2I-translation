@@ -1,0 +1,8 @@
+python train.py --config configs/selfie2anime.yaml --output_path ./outputs/selfie2anime
+python train.py --config configs/selfie2anime.yaml --output_path ./outputs/selfie2anime --resume
+
+python train.py --config configs/photo2portrait.yaml --output_path ./outputs/photo2portrait
+python train.py --config configs/photo2portrait.yaml --output_path ./outputs/photo2portrait --resume
+
+python train.py --config configs/horse2zebra.yaml --output_path ./outputs/horse2zebra
+python train.py --config configs/horse2zebra.yaml --output_path ./outputs/horse2zebra --resume
