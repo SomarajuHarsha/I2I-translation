@@ -47,7 +47,7 @@ def check_args(args):
 
     # --epoch
     try:
-        assert args.epoch >= 1
+        assert args.iteration >= 1
     except:
         print('number of epochs must be larger than or equal to one')
 
