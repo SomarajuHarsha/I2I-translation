@@ -42,7 +42,7 @@ class UGATIT(object) :
         """ Discriminator """
         self.n_dis = args.n_dis
 
-        self.train_writer = tensorboardX.SummaryWriter(self.result_dir + "/logs")
+        self.train_writer = tensorboardX.SummaryWriter(os.join(self.result_dir, self.dataset, "logs"))
 
         self.img_size = args.img_size
         self.img_ch = args.img_ch
