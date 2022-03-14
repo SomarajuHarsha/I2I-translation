@@ -64,3 +64,9 @@ def tensor2numpy(x):
 
 def RGB2BGR(x):
     return cv2.cvtColor(x, cv2.COLOR_RGB2BGR)
+
+def write_loss(iterations, trainer, train_writer):
+    members = [attr for attr in dir(trainer) \
+               if not callable(getattr(trainer, attr)) and not attr.startswith("__") and ('loss' in attr or 'grad' in attr or 'nwd' in attr)]
+    for m in members:
+        train_writer.add_scalar(m, getattr(trainer, m), iterations + 1)

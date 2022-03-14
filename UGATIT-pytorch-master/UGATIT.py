@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from networks import *
 from utils import *
 from glob import glob
+import tensorboardX
 
 class UGATIT(object) :
     def __init__(self, args):
@@ -40,6 +41,8 @@ class UGATIT(object) :
 
         """ Discriminator """
         self.n_dis = args.n_dis
+
+        self.train_writer = tensorboardX.SummaryWriter(self.result_dir + "/logs")
 
         self.img_size = args.img_size
         self.img_ch = args.img_ch
@@ -243,6 +246,7 @@ class UGATIT(object) :
 
             print("[%5d/%5d] time: %4.4f d_loss: %.8f, g_loss: %.8f" % (step, self.iteration, time.time() - start_time, Discriminator_loss, Generator_loss))
             if step % self.print_freq == 0:
+                write_loss(step, self.genA2B, self.train_writer)
                 train_sample_num = 5
                 test_sample_num = 5
                 A2B = np.zeros((self.img_size * 7, 0, 3))

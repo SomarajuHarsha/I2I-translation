@@ -1,10 +1,8 @@
-python main.py --dataset selfie2anime
+python main.py --dataset selfie2anime --result_dir
 python main.py --dataset selfie2anime --resume
 
 python main.py --dataset photo2portrait
 python main.py --dataset photo2portrait --resume
 
-python main.py --dataset horse2zebra
-python main.py --dataset horse2zebra --resume
-
-
+python main.py --dataset horse2zebra --result_dir /content/drive/MyDrive/Research/Coding/UGAITIT --batch_size 1 --benchmark_flag True --light True
+python main.py --dataset horse2zebra --result_dir /content/drive/MyDrive/Research/Coding/UGAITIT --batch_size 1 --benchmark_flag True --light True --resume
