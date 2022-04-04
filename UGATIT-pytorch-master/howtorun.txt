@@ -4,5 +4,5 @@ python main.py --dataset selfie2anime --resume
 python main.py --dataset photo2portrait
 python main.py --dataset photo2portrait --resume
 
-python main.py --dataset horse2zebra --iteration 100000 --print_freq 100 --save_freq 5000 --result_dir /content/drive/MyDrive/Research/Coding/UGAITIT --batch_size 1 --benchmark_flag True --light True
-python main.py --dataset horse2zebra --iteration 100000 --print_freq 100 --save_freq 5000 --result_dir /content/drive/MyDrive/Research/Coding/UGAITIT --batch_size 1 --benchmark_flag True --light True --resume
+python main.py --dataset horse2zebra --iteration 100000 --print_freq 1000 --save_freq 5000 --result_dir /content/drive/MyDrive/Research/Coding/UGAITIT --batch_size 1 --benchmark_flag True --light True
+python main.py --dataset horse2zebra --iteration 100000 --print_freq 1000 --save_freq 5000 --result_dir /content/drive/MyDrive/Research/Coding/UGAITIT --batch_size 1 --benchmark_flag True --light True --resume

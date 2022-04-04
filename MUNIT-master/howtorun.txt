@@ -1,8 +1,8 @@
-python train.py --config configs/selfie2anime.yaml
-python train.py --config --resume configs/selfie2anime.yaml
+python train.py --config configs/selfie2anime.yaml --output_path /content/drive/MyDrive/Research/Coding/MUNIT
+python train.py --config --resume configs/selfie2anime.yaml --output_path /content/drive/MyDrive/Research/Coding/MUNIT
 
-python train.py --config configs/horse2zebra.yaml
-python train.py --config --resume configs/horse2zebra.yaml
+python train.py --config configs/horse2zebra.yaml --output_path /content/drive/MyDrive/Research/Coding/MUNIT
+python train.py --config --resume configs/horse2zebra.yaml --output_path /content/drive/MyDrive/Research/Coding/MUNIT
 
-python train.py --config configs/photo2portrait.yaml
-python train.py --config --resume configs/photo2portrait.yaml
+python train.py --config configs/photo2portrait.yaml --output_path /content/drive/MyDrive/Research/Coding/MUNIT
+python train.py --config --resume configs/photo2portrait.yaml --output_path /content/drive/MyDrive/Research/Coding/MUNIT
