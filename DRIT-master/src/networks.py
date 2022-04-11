@@ -144,37 +144,37 @@ class E_attr(nn.Module):
     self.model_a = nn.Sequential(
         nn.ReflectionPad2d(3),
         nn.Conv2d(input_dim_a, dim, 7, 1),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim, dim*2, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim*2, dim*4, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim*4, dim*4, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim*4, dim*4, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.AdaptiveAvgPool2d(1),
         nn.Conv2d(dim*4, output_nc, 1, 1, 0))
     self.model_b = nn.Sequential(
         nn.ReflectionPad2d(3),
         nn.Conv2d(input_dim_b, dim, 7, 1),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim, dim*2, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim*2, dim*4, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim*4, dim*4, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.ReflectionPad2d(1),
         nn.Conv2d(dim*4, dim*4, 4, 2),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.AdaptiveAvgPool2d(1),
         nn.Conv2d(dim*4, output_nc, 1, 1, 0))
     return
@@ -292,15 +292,15 @@ class G(nn.Module):
 
     self.mlpA = nn.Sequential(
         nn.Linear(8, 256),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.Linear(256, 256),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.Linear(256, tch_add*4))
     self.mlpB = nn.Sequential(
         nn.Linear(8, 256),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.Linear(256, 256),
-        nn.ReLU(inplace=False),
+        nn.ReLU(inplace=True),
         nn.Linear(256, tch_add*4))
     return
 
@@ -440,11 +440,11 @@ def get_norm_layer(layer_type='instance'):
 
 def get_non_linearity(layer_type='relu'):
   if layer_type == 'relu':
-    nl_layer = functools.partial(nn.ReLU, inplace=False)
+    nl_layer = functools.partial(nn.ReLU, inplace=True)
   elif layer_type == 'lrelu':
     nl_layer = functools.partial(nn.LeakyReLU, negative_slope=0.2, inplace=False)
   elif layer_type == 'elu':
-    nl_layer = functools.partial(nn.ELU, inplace=False)
+    nl_layer = functools.partial(nn.ELU, inplace=True)
   else:
     raise NotImplementedError('nonlinearity activitation [%s] is not found' % layer_type)
   return nl_layer
@@ -506,7 +506,7 @@ class LeakyReLUConv2d(nn.Module):
       model += [nn.Conv2d(n_in, n_out, kernel_size=kernel_size, stride=stride, padding=0, bias=True)]
     if 'norm' == 'Instance':
       model += [nn.InstanceNorm2d(n_out, affine=False)]
-    model += [nn.LeakyReLU(inplace=False)]
+    model += [nn.LeakyReLU(inplace=True)]
     self.model = nn.Sequential(*model)
     self.model.apply(gaussian_weights_init)
     #elif == 'Group'
@@ -520,7 +520,7 @@ class ReLUINSConv2d(nn.Module):
     model += [nn.ReflectionPad2d(padding)]
     model += [nn.Conv2d(n_in, n_out, kernel_size=kernel_size, stride=stride, padding=0, bias=True)]
     model += [nn.InstanceNorm2d(n_out, affine=False)]
-    model += [nn.ReLU(inplace=False)]
+    model += [nn.ReLU(inplace=True)]
     self.model = nn.Sequential(*model)
     self.model.apply(gaussian_weights_init)
   def forward(self, x):
@@ -534,7 +534,7 @@ class INSResBlock(nn.Module):
     model = []
     model += self.conv3x3(inplanes, planes, stride)
     model += [nn.InstanceNorm2d(planes)]
-    model += [nn.ReLU(inplace=False)]
+    model += [nn.ReLU(inplace=True)]
     model += self.conv3x3(planes, planes)
     model += [nn.InstanceNorm2d(planes)]
     if dropout > 0:
@@ -604,7 +604,7 @@ class ReLUINSConvTranspose2d(nn.Module):
     model = []
     model += [nn.ConvTranspose2d(n_in, n_out, kernel_size=kernel_size, stride=stride, padding=padding, output_padding=output_padding, bias=True)]
     model += [LayerNorm(n_out)]
-    model += [nn.ReLU(inplace=False)]
+    model += [nn.ReLU(inplace=True)]
     self.model = nn.Sequential(*model)
     self.model.apply(gaussian_weights_init)
   def forward(self, x):
