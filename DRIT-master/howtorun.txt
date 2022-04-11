@@ -1,8 +1,8 @@
-python train.py --dataroot ../../datasets/selfie2anime --name selfie2anime --display_dir ../selfie2anime/logs --result_dir ../selfie2anime/results
-python train.py --dataroot ../../datasets/selfie2anime --name selfie2anime --display_dir ../selfie2anime/logs --result_dir ../selfie2anime/results --resume ../selfie2anime/results
+python train.py --dataroot ../../datasets/selfie2anime --name selfie2anime --display_dir /drive/MyDrive/Research/coding/DRIT/selfie2anime/logs --result_dir /drive/MyDrive/Research/coding/DRIT/selfie2anime/results
+python train.py --dataroot ../../datasets/selfie2anime --name selfie2anime --display_dir /drive/MyDrive/Research/coding/DRIT/selfie2anime/logs --result_dir /drive/MyDrive/Research/coding/DRIT/selfie2anime/results --resume /drive/MyDrive/Research/coding/DRIT/selfie2anime/results
 
-python train.py --dataroot ../../datasets/photo2portrait --name photo2portrait --display_dir ../photo2portrait/logs --result_dir ../photo2portrait/results
-python train.py --dataroot ../../datasets/photo2portrait --name photo2portrait --display_dir ../photo2portrait/logs --result_dir ../photo2portrait/results --resume ../photo2portrait/results
+python train.py --dataroot ../../datasets/photo2portrait --name photo2portrait --display_dir /drive/MyDrive/Research/coding/DRIT/photo2portrait/logs --result_dir /drive/MyDrive/Research/coding/DRIT/photo2portrait/results
+python train.py --dataroot ../../datasets/photo2portrait --name photo2portrait --display_dir /drive/MyDrive/Research/coding/DRIT/photo2portrait/logs --result_dir /drive/MyDrive/Research/coding/DRIT/photo2portrait/results --resume /drive/MyDrive/Research/coding/DRIT/photo2portrait/results
 
-python train.py --dataroot ../../datasets/horse2zebra --name horse2zebra --display_dir ../horse2zebra/logs --result_dir ../horse2zebra/results
-python train.py --dataroot ../../datasets/horse2zebra --name horse2zebra --display_dir ../horse2zebra/logs --result_dir ../horse2zebra/results --resume ../horse2zebra/results
+python train.py --dataroot ../../datasets/horse2zebra --name horse2zebra --display_dir /drive/MyDrive/Research/coding/DRIT/horse2zebra/logs --result_dir /drive/MyDrive/Research/coding/DRIT/horse2zebra/results
+python train.py --dataroot ../../datasets/horse2zebra --name horse2zebra --display_dir /drive/MyDrive/Research/coding/DRIT/horse2zebra/logs --result_dir /drive/MyDrive/Research/coding/DRIT/horse2zebra/results --resume /drive/MyDrive/Research/coding/DRIT/horse2zebra/results
