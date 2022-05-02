@@ -3,13 +3,13 @@
 image_save_iter:  1_000       # How often do you want to save output images during training
 image_display_iter: 100       # How often do you want to display output images during training
 display_size: 15              # How many images do you want to display each time
-snapshot_save_iter: 10_000    # How often do you want to save trained models
+snapshot_save_iter: 10_00     # How often do you want to save trained models
 log_iter: 1                   # How often do you want to log the training stats
 
 # optimization options
 random_seed: 1
 max_iter: 1_500_000           # maximum number of training iterations
-batch_size: 3                 # batch size
+batch_size: 16                # batch size
 weight_decay: 0.0001          # weight decay
 beta1: 0.5                    # Adam parameter
 beta2: 0.999                  # Adam parameter
