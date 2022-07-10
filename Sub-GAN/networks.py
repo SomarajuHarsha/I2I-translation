@@ -17,7 +17,7 @@ except ImportError: # will be 3.x series
 
 class MsImageDis(nn.Module):
     # Multi-scale discriminator architecture
-    def __init__(self, input_dim, params):
+    def __init__(self, input_dim, params, device='cuda:0'):
         super(MsImageDis, self).__init__()
         self.n_layer = params['n_layer']
         self.gan_type = params['gan_type']
@@ -29,6 +29,7 @@ class MsImageDis(nn.Module):
         self.input_dim = input_dim
         self.downsample = nn.AvgPool2d(3, stride=2, padding=[1, 1], count_include_pad=False)
         self.cnns = nn.ModuleList()
+        self.device = device
         for _ in range(self.num_scales):
             self.cnns.append(self._make_net())
 
@@ -60,8 +61,8 @@ class MsImageDis(nn.Module):
             if self.gan_type == 'lsgan':
                 loss += torch.mean((out0 - 0)**2) + torch.mean((out1 - 1)**2)
             elif self.gan_type == 'nsgan':
-                all0 = Variable(torch.zeros_like(out0.data).cuda(), requires_grad=False)
-                all1 = Variable(torch.ones_like(out1.data).cuda(), requires_grad=False)
+                all0 = Variable(torch.zeros_like(out0.data).to(self.device), requires_grad=False)
+                all1 = Variable(torch.ones_like(out1.data).to(self.device), requires_grad=False)
                 loss += torch.mean(F.binary_cross_entropy(F.sigmoid(out0), all0) +
                                    F.binary_cross_entropy(F.sigmoid(out1), all1))
             else:
@@ -76,7 +77,7 @@ class MsImageDis(nn.Module):
             if self.gan_type == 'lsgan':
                 loss += torch.mean((out0 - 1)**2) # LSGAN
             elif self.gan_type == 'nsgan':
-                all1 = Variable(torch.ones_like(out0.data).cuda(), requires_grad=False)
+                all1 = Variable(torch.ones_like(out0.data).to(self.device), requires_grad=False)
                 loss += torch.mean(F.binary_cross_entropy(F.sigmoid(out0), all1))
             else:
                 assert 0, "Unsupported GAN type: {}".format(self.gan_type)
@@ -103,6 +104,11 @@ class AdaINGen(nn.Module):
 
         # content encoder
         self.enc_content = ContentEncoder(n_downsample, n_res, input_dim, dim, 'in', activ, pad_type=pad_type)
+        
+        # # style generator to generate one style to another
+        # self.gen_style = StyleGenerator(style_dim, dim, 5)
+
+        # decoder
         self.dec = Decoder(n_downsample, n_res, self.enc_content.output_dim, input_dim, res_norm='adain', activ=activ, pad_type=pad_type)
 
         # MLP to generate AdaIN parameters
@@ -146,40 +152,61 @@ class AdaINGen(nn.Module):
                 num_adain_params += 2*m.num_features
         return num_adain_params
 
+##################################################################################
+# Latent Space - Generator, Discriminator
+##################################################################################
 
-class VAEGen(nn.Module):
-    # VAE architecture
-    def __init__(self, input_dim, params):
-        super(VAEGen, self).__init__()
-        dim = params['dim']
-        n_downsample = params['n_downsample']
-        n_res = params['n_res']
-        activ = params['activ']
-        pad_type = params['pad_type']
+class StyleGenerator(nn.Module):
+    # def __init__(self, style_dim, dim, n_blk, norm='none', activ='relu'):
+    def __init__(self, params):
+        super(StyleGenerator, self).__init__()
+        self.model = MLP(params['style_dim'], params['style_dim'], params['dim'], 5, norm='none', activ=params['activ'])
+    
+    def forward(self, x):
+        return self.model(x)
 
-        # content encoder
-        self.enc = ContentEncoder(n_downsample, n_res, input_dim, dim, 'in', activ, pad_type=pad_type)
-        self.dec = Decoder(n_downsample, n_res, self.enc.output_dim, input_dim, res_norm='in', activ=activ, pad_type=pad_type)
+class StyleDiscriminator(nn.Module):
+    def __init__(self, style_dim, params, device='cuda:0'):
+        super(StyleDiscriminator, self).__init__()
+        # self.model = MLP(style_dim, 1, dim, n_blk, norm=norm, activ=activ, out_activation='sigmoid')
+        self.model = MLP(style_dim, 1, params['dim'], 5, norm=params['norm'], activ=params['activ'], out_activation='sigmoid')
+        self.gan_type = params['gan_type']
+        self.device = device
 
-    def forward(self, images):
-        # This is a reduced VAE implementation where we assume the outputs are multivariate Gaussian distribution with mean = hiddens and std_dev = all ones.
-        hiddens = self.encode(images)
-        if self.training == True:
-            noise = Variable(torch.randn(hiddens.size()).cuda(hiddens.data.get_device()))
-            images_recon = self.decode(hiddens + noise)
-        else:
-            images_recon = self.decode(hiddens)
-        return images_recon, hiddens
+    def forward(self, x):
+        return self.model(x)
 
-    def encode(self, images):
-        hiddens = self.enc(images)
-        noise = Variable(torch.randn(hiddens.size()).cuda(hiddens.data.get_device()))
-        return hiddens, noise
+    def calc_dis_loss(self, style_fake, style_real):
+        # calculate the loss to train D
+        outs0 = self.forward(style_fake)
+        outs1 = self.forward(style_real)
+        loss = 0
 
-    def decode(self, hiddens):
-        images = self.dec(hiddens)
-        return images
+        for it, (out0, out1) in enumerate(zip(outs0, outs1)):
+            if self.gan_type == 'lsgan':
+                loss += torch.mean((out0 - 0)**2) + torch.mean((out1 - 1)**2)
+            elif self.gan_type == 'nsgan':
+                all0 = Variable(torch.zeros_like(out0.data).to(self.device), requires_grad=False)
+                all1 = Variable(torch.ones_like(out1.data).to(self.device), requires_grad=False)
+                loss += torch.mean(F.binary_cross_entropy(F.sigmoid(out0), all0) +
+                                    F.binary_cross_entropy(F.sigmoid(out1), all1))
+            else:
+                assert 0, "Unsupported GAN type: {}".format(self.gan_type)
+        return loss
 
+    def calc_gen_loss(self, style_fake):
+        # calculate the loss to train G
+        outs0 = self.forward(style_fake)
+        loss = 0
+        for it, (out0) in enumerate(outs0):
+            if self.gan_type == 'lsgan':
+                loss += torch.mean((out0 - 1)**2) # LSGAN
+            elif self.gan_type == 'nsgan':
+                all1 = Variable(torch.ones_like(out0.data).to(self.device), requires_grad=False)
+                loss += torch.mean(F.binary_cross_entropy(F.sigmoid(out0), all1))
+            else:
+                assert 0, "Unsupported GAN type: {}".format(self.gan_type)
+        return loss
 
 ##################################################################################
 # Encoder and Decoders
@@ -254,14 +281,14 @@ class ResBlocks(nn.Module):
         return self.model(x)
 
 class MLP(nn.Module):
-    def __init__(self, input_dim, output_dim, dim, n_blk, norm='none', activ='relu'):
+    def __init__(self, input_dim, output_dim, dim, n_blk, norm='none', activ='relu', out_activation='none'):
 
         super(MLP, self).__init__()
         self.model = []
         self.model += [LinearBlock(input_dim, dim, norm=norm, activation=activ)]
         for i in range(n_blk - 2):
             self.model += [LinearBlock(dim, dim, norm=norm, activation=activ)]
-        self.model += [LinearBlock(dim, output_dim, norm='none', activation='none')] # no output activations
+        self.model += [LinearBlock(dim, output_dim, norm='none', activation=out_activation)] # no output activations
         self.model = nn.Sequential(*self.model)
 
     def forward(self, x):
@@ -380,6 +407,8 @@ class LinearBlock(nn.Module):
             self.activation = nn.SELU(inplace=True)
         elif activation == 'tanh':
             self.activation = nn.Tanh()
+        elif activation == 'sigmoid':
+            self.activation = nn.Sigmoid()
         elif activation == 'none':
             self.activation = None
         else:
