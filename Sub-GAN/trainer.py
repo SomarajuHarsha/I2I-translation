@@ -16,8 +16,8 @@ class SubGAN_Trainer(nn.Module):
         # Initiate the networks
         self.enc_a = AdaINGen(hyperparameters['input_dim_a'], hyperparameters['gen'])  # auto-encoder for domain a
         self.enc_b = AdaINGen(hyperparameters['input_dim_b'], hyperparameters['gen'])  # auto-encoder for domain b
-        # self.dis_a = MsImageDis(hyperparameters['input_dim_a'], hyperparameters['dis'])  # discriminator for domain a
-        # self.dis_b = MsImageDis(hyperparameters['input_dim_b'], hyperparameters['dis'])  # discriminator for domain b
+        self.dis_a = MsImageDis(hyperparameters['input_dim_a'], hyperparameters['dis'])  # discriminator for domain a
+        self.dis_b = MsImageDis(hyperparameters['input_dim_b'], hyperparameters['dis'])  # discriminator for domain b
 
         self.device = hyperparameters['device']
         
@@ -40,6 +40,7 @@ class SubGAN_Trainer(nn.Module):
         gen_params = list(self.style_gen_a.parameters()) + list(self.style_gen_b.parameters())
         dis_params = list(self.style_dis_a.parameters()) + list(self.style_dis_b.parameters())
         enc_params = list(self.enc_a.parameters()) + list(self.enc_b.parameters())
+        img_dis_params = list(self.dis_a.parameters()) + list(self.dis_b.parameters())
 
         self.gen_opt = torch.optim.Adam([p for p in gen_params if p.requires_grad],
                                         lr=lr, betas=(beta1, beta2), weight_decay=hyperparameters['weight_decay'])
@@ -47,15 +48,20 @@ class SubGAN_Trainer(nn.Module):
                                         lr=lr, betas=(beta1, beta2), weight_decay=hyperparameters['weight_decay'])
         self.enc_opt = torch.optim.Adam([p for p in enc_params if p.requires_grad],
                                         lr=lr, betas=(beta1, beta2), weight_decay=hyperparameters['weight_decay'])
+        self.img_dis_opt = torch.optim.Adam([p for p in img_dis_params if p.requires_grad],
+                                        lr=lr, betas=(beta1, beta2), weight_decay=hyperparameters['weight_decay'])
         
         self.gen_scheduler = get_scheduler(self.gen_opt, hyperparameters)
         self.dis_scheduler = get_scheduler(self.dis_opt, hyperparameters)
         self.enc_scheduler = get_scheduler(self.enc_opt, hyperparameters)
+        self.img_dis_scheduler = get_scheduler(self.img_dis_opt, hyperparameters)
         
         # Network weight initialization
         self.apply(weights_init(hyperparameters['init']))
         self.style_dis_a.apply(weights_init('gaussian'))
         self.style_dis_b.apply(weights_init('gaussian'))
+        self.dis_a.apply(weights_init('gaussian'))
+        self.dis_b.apply(weights_init('gaussian'))
 
         # Load VGG model if needed
         if 'vgg_w' in hyperparameters.keys() and hyperparameters['vgg_w'] > 0:
@@ -92,6 +98,10 @@ class SubGAN_Trainer(nn.Module):
         # generate style
         s_ab = self.style_gen_a(s_a_prime)
         s_ba = self.style_gen_a(s_b_prime)
+
+        # decode generated style
+        x_ba_fake = self.enc_a.decode(c_b, s_ba)
+        x_ab_fake = self.enc_b.decode(c_a, s_ab)
 
         # decode (within domain)
         x_a_recon = self.enc_a.decode(c_a, s_a_prime)
@@ -139,10 +149,13 @@ class SubGAN_Trainer(nn.Module):
         self.loss_cross_cycle = self.recon_criterion(x_a, x_a_crosscon) + self.recon_criterion(x_b, x_b_crosscon)
 
         # GAN loss
-        # self.loss_enc_adv_a = self.dis_a.calc_gen_loss(x_ba)
-        # self.loss_enc_adv_b = self.dis_b.calc_gen_loss(x_ab)
+        
         self.loss_gen_adv_a = self.style_dis_a.calc_gen_loss(s_ba)
         self.loss_gen_adv_b = self.style_dis_a.calc_gen_loss(s_ab)
+
+        # Overall GAN loss
+        self.loss_ovr_adv_a = self.dis_a.calc_gen_loss(x_ba_fake)
+        self.loss_ovr_adv_b = self.dis_b.calc_gen_loss(x_ab_fake)
 
         # domain-invariant perceptual loss
         self.loss_gen_vgg_a = self.compute_vgg_loss(self.vgg, x_ba, x_b) if hyperparameters['vgg_w'] > 0 else 0
@@ -151,6 +164,8 @@ class SubGAN_Trainer(nn.Module):
         # total loss
         self.loss_gen_total = hyperparameters['gan_w'] * self.loss_gen_adv_a + \
                               hyperparameters['gan_w'] * self.loss_gen_adv_b + \
+                              hyperparameters['gan_w'] * self.loss_ovr_adv_a + \
+                              hyperparameters['gan_w'] * self.loss_ovr_adv_b + \
                               hyperparameters['recon_x_w'] * self.loss_gen_recon_x_a + \
                               hyperparameters['recon_s_w'] * self.loss_gen_recon_s_a + \
                               hyperparameters['recon_c_w'] * self.loss_gen_recon_c_a + \
@@ -208,20 +223,30 @@ class SubGAN_Trainer(nn.Module):
         # gen back
         s_bab = self.style_gen_a(s_ba)
         s_aba = self.style_gen_b(s_ab)
+        
         # # decode (cross domain)
         # x_ba = self.enc_a.decode(c_b, s_ba)
         # x_ab = self.enc_b.decode(c_a, s_ab)
+
+        # decode generated style
+        x_ba_fake = self.enc_a.decode(c_b, s_ba)
+        x_ab_fake = self.enc_b.decode(c_a, s_ab)
+
         # D loss
-        # self.loss_dis_a = self.dis_a.calc_dis_loss(x_ba.detach(), x_a)
-        # self.loss_dis_b = self.dis_b.calc_dis_loss(x_ab.detach(), x_b)
         self.loss_dis_a = self.style_dis_a.calc_dis_loss(s_ba.detach(), s_a.detach())
         self.loss_dis_b = self.style_dis_a.calc_dis_loss(s_ab.detach(), s_b.detach() )
 
         # Cycle adversarial loss
         self.loss_cycle = self.style_dis_a.calc_dis_loss(s_aba.detach(), s_a.detach()) + self.style_dis_b.calc_dis_loss(s_bab.detach(), s_b.detach())
 
+        # Overall GAN D loss
+        self.loss_ovr_dis_a = self.dis_a.calc_dis_loss(x_ba_fake.detach(), x_a)
+        self.loss_ovr_dis_b = self.dis_b.calc_dis_loss(x_ab_fake.detach(), x_b)
+
         self.loss_dis_total =   hyperparameters['gan_w'] * self.loss_dis_a + \
                                 hyperparameters['gan_w'] * self.loss_dis_b + \
+                                hyperparameters['gan_w'] * self.loss_ovr_dis_a + \
+                                hyperparameters['gan_w'] * self.loss_ovr_dis_b + \
                                 hyperparameters['cyc_w'] * self.loss_cycle
         self.loss_dis_total.backward()
         self.dis_opt.step()
@@ -233,6 +258,8 @@ class SubGAN_Trainer(nn.Module):
             self.gen_scheduler.step()
         if self.enc_scheduler is not None:
             self.enc_scheduler.step()
+        if self.img_dis_scheduler is not None:
+            self.img_dis_scheduler.step()
 
     def resume(self, checkpoint_dir, hyperparameters):
         # Load encryptors
@@ -251,15 +278,22 @@ class SubGAN_Trainer(nn.Module):
         state_dict = torch.load(last_model_name)
         self.style_dis_a.load_state_dict(state_dict['a'])
         self.style_dis_b.load_state_dict(state_dict['b'])
+        # Load image discriminators
+        last_model_name = get_model_list(checkpoint_dir, "img")
+        state_dict = torch.load(last_model_name)
+        self.dis_a.load_state_dict(state_dict['a'])
+        self.dis_b.load_state_dict(state_dict['b'])
         # Load optimizers
         state_dict = torch.load(os.path.join(checkpoint_dir, 'optimizer.pt'))
         self.dis_opt.load_state_dict(state_dict['dis'])
         self.gen_opt.load_state_dict(state_dict['gen'])
         self.enc_opt.load_state_dict(state_dict['enc'])
+        self.img_dis_opt.load_state_dict(state_dict['img'])
         # Reinitilize schedulers
         self.dis_scheduler = get_scheduler(self.dis_opt, hyperparameters, iterations)
         self.gen_scheduler = get_scheduler(self.gen_opt, hyperparameters, iterations)
         self.enc_scheduler = get_scheduler(self.enc_opt, hyperparameters, iterations)
+        self.img_dis_scheduler = get_scheduler(self.img_dis_opt, hyperparameters, iterations)
         print('Resume from iteration %d' % iterations)
         return iterations
 
@@ -268,8 +302,10 @@ class SubGAN_Trainer(nn.Module):
         enc_name = os.path.join(snapshot_dir, 'enc_%08d.pt' % (iterations + 1))
         gen_name = os.path.join(snapshot_dir, 'gen_%08d.pt' % (iterations + 1))
         dis_name = os.path.join(snapshot_dir, 'dis_%08d.pt' % (iterations + 1))
+        img_dis_name = os.path.join(snapshot_dir, 'img_%08d.pt' % (iterations + 1))
         opt_name = os.path.join(snapshot_dir, 'optimizer.pt')
         torch.save({'a': self.enc_a.state_dict(), 'b': self.enc_b.state_dict()}, enc_name)
         torch.save({'a': self.style_gen_a.state_dict(), 'b': self.style_gen_b.state_dict()}, gen_name)
         torch.save({'a': self.style_dis_a.state_dict(), 'b': self.style_dis_b.state_dict()}, dis_name)
-        torch.save({'gen': self.gen_opt.state_dict(), 'dis': self.dis_opt.state_dict(), 'enc': self.enc_opt.state_dict()}, opt_name)
+        torch.save({'a': self.dis_a.state_dict(), 'b': self.dis_b.state_dict()}, img_dis_name)
+        torch.save({'gen': self.gen_opt.state_dict(), 'dis': self.dis_opt.state_dict(), 'enc': self.enc_opt.state_dict(), 'img': self.img_dis_opt.state_dict()}, opt_name)
