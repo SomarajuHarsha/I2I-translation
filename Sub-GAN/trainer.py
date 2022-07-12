@@ -13,26 +13,26 @@ class SubGAN_Trainer(nn.Module):
     def __init__(self, hyperparameters):
         super(SubGAN_Trainer, self).__init__()
         lr = hyperparameters['lr']
+        self.device = hyperparameters['device']
         # Initiate the networks
         self.enc_a = AdaINGen(hyperparameters['input_dim_a'], hyperparameters['gen'])  # auto-encoder for domain a
         self.enc_b = AdaINGen(hyperparameters['input_dim_b'], hyperparameters['gen'])  # auto-encoder for domain b
-        self.dis_a = MsImageDis(hyperparameters['input_dim_a'], hyperparameters['dis'])  # discriminator for domain a
-        self.dis_b = MsImageDis(hyperparameters['input_dim_b'], hyperparameters['dis'])  # discriminator for domain b
+        self.dis_a = MsImageDis(hyperparameters['input_dim_a'], hyperparameters['dis'], self.device)  # discriminator for domain a
+        self.dis_b = MsImageDis(hyperparameters['input_dim_b'], hyperparameters['dis'], self.device)  # discriminator for domain b
 
-        self.device = hyperparameters['device']
         
         self.instancenorm = nn.InstanceNorm2d(512, affine=False)
         self.style_dim = hyperparameters['gen']['style_dim']
 
         self.style_gen_a = StyleGenerator(hyperparameters['gen']) # generator to generate domain a to b style
         self.style_gen_b = StyleGenerator(hyperparameters['gen']) # generator to generate domain b to a style
-        self.style_dis_a = StyleDiscriminator(self.style_dim, hyperparameters['dis']) # discriminator for domain a style
-        self.style_dis_b = StyleDiscriminator(self.style_dim, hyperparameters['dis']) # discriminator for domain b style
+        self.style_dis_a = StyleDiscriminator(self.style_dim, hyperparameters['dis'], self.device) # discriminator for domain a style
+        self.style_dis_b = StyleDiscriminator(self.style_dim, hyperparameters['dis'], self.device) # discriminator for domain b style
 
         # fix the noise used in sampling
         display_size = int(hyperparameters['display_size'])
-        self.s_a = torch.randn(display_size, self.style_dim, 1, 1).to(self.device)
-        self.s_b = torch.randn(display_size, self.style_dim, 1, 1).to(self.device)
+        # self.s_a = torch.randn(display_size, self.style_dim, 1, 1).to(self.device)
+        # self.s_b = torch.randn(display_size, self.style_dim, 1, 1).to(self.device)
 
         # Setup the optimizers
         beta1 = hyperparameters['beta1']
@@ -188,8 +188,8 @@ class SubGAN_Trainer(nn.Module):
 
     def sample(self, x_a, x_b):
         self.eval()
-        s_a1 = Variable(self.s_a)
-        s_b1 = Variable(self.s_b)
+        # s_a1 = Variable(self.s_a)
+        # s_b1 = Variable(self.s_b)
         s_a2 = Variable(torch.randn(x_a.size(0), self.style_dim, 1, 1).to(self.device))
         s_b2 = Variable(torch.randn(x_b.size(0), self.style_dim, 1, 1).to(self.device))
         x_a_recon, x_b_recon, x_ba1, x_ba2, x_ab1, x_ab2 = [], [], [], [], [], []
