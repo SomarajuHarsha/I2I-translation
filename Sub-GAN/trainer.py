@@ -80,7 +80,7 @@ class SubGAN_Trainer(nn.Module):
         c_a, s_a = self.enc_a.encode(x_a)
         c_b, s_b = self.enc_b.encode(x_b)
         s_ab = self.style_gen_a(s_a)
-        s_ba = self.style_gen_a(s_b)
+        s_ba = self.style_gen_b(s_b)
         x_ba = self.enc_a.decode(c_b, s_ba)
         x_ab = self.enc_b.decode(c_a, s_ab)
         self.train()
@@ -88,6 +88,7 @@ class SubGAN_Trainer(nn.Module):
 
     def gen_update(self, x_a, x_b, hyperparameters):
         self.gen_opt.zero_grad()
+        self.enc_opt.zero_grad()
         # s_a = Variable(torch.randn(x_a.size(0), self.style_dim, 1, 1).to(self.device))
         # s_b = Variable(torch.randn(x_b.size(0), self.style_dim, 1, 1).to(self.device))
 
@@ -148,10 +149,9 @@ class SubGAN_Trainer(nn.Module):
         # cross cycle consistency loss
         self.loss_cross_cycle = self.recon_criterion(x_a, x_a_crosscon) + self.recon_criterion(x_b, x_b_crosscon)
 
-        # GAN loss
-        
+        # GAN loss      
         self.loss_gen_adv_a = self.style_dis_a.calc_gen_loss(s_ba)
-        self.loss_gen_adv_b = self.style_dis_a.calc_gen_loss(s_ab)
+        self.loss_gen_adv_b = self.style_dis_b.calc_gen_loss(s_ab)
 
         # Overall GAN loss
         self.loss_ovr_adv_a = self.dis_a.calc_gen_loss(x_ba_fake)
@@ -212,6 +212,7 @@ class SubGAN_Trainer(nn.Module):
 
     def dis_update(self, x_a, x_b, hyperparameters):
         self.dis_opt.zero_grad()
+        self.img_dis_opt.zero_grad()
         # s_a = Variable(torch.randn(x_a.size(0), self.style_dim, 1, 1).to(self.device))
         # s_b = Variable(torch.randn(x_b.size(0), self.style_dim, 1, 1).to(self.device))
         # encode
@@ -234,7 +235,7 @@ class SubGAN_Trainer(nn.Module):
 
         # D loss
         self.loss_dis_a = self.style_dis_a.calc_dis_loss(s_ba.detach(), s_a.detach())
-        self.loss_dis_b = self.style_dis_a.calc_dis_loss(s_ab.detach(), s_b.detach() )
+        self.loss_dis_b = self.style_dis_b.calc_dis_loss(s_ab.detach(), s_b.detach())
 
         # Cycle adversarial loss
         self.loss_cycle = self.style_dis_a.calc_dis_loss(s_aba.detach(), s_a.detach()) + self.style_dis_b.calc_dis_loss(s_bab.detach(), s_b.detach())
