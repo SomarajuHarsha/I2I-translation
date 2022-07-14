@@ -98,7 +98,7 @@ class SubGAN_Trainer(nn.Module):
 
         # generate style
         s_ab = self.style_gen_a(s_a_prime)
-        s_ba = self.style_gen_a(s_b_prime)
+        s_ba = self.style_gen_b(s_b_prime)
 
         # decode generated style
         x_ba_fake = self.enc_a.decode(c_b, s_ba)
@@ -178,6 +178,7 @@ class SubGAN_Trainer(nn.Module):
 
         self.loss_gen_total.backward()
         self.gen_opt.step()
+        self.enc_opt.step()
 
     def compute_vgg_loss(self, vgg, img, target):
         img_vgg = vgg_preprocess(img, self.device)
@@ -251,6 +252,7 @@ class SubGAN_Trainer(nn.Module):
                                 hyperparameters['cyc_w'] * self.loss_cycle
         self.loss_dis_total.backward()
         self.dis_opt.step()
+        self.img_dis_opt.step()
 
     def update_learning_rate(self):
         if self.dis_scheduler is not None:
