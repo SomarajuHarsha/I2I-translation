@@ -154,8 +154,8 @@ class SubGAN_Trainer(nn.Module):
         self.loss_gen_adv_b = self.style_dis_b.calc_gen_loss(s_ab)
 
         # Overall GAN loss
-        self.loss_ovr_adv_a = self.dis_a.calc_gen_loss(x_ba_fake)
-        self.loss_ovr_adv_b = self.dis_b.calc_gen_loss(x_ab_fake)
+        self.loss_ovr_adv_a = self.dis_a.calc_gen_loss(x_ba)
+        self.loss_ovr_adv_b = self.dis_b.calc_gen_loss(x_ab)
 
         # domain-invariant perceptual loss
         self.loss_gen_vgg_a = self.compute_vgg_loss(self.vgg, x_ba, x_b) if hyperparameters['vgg_w'] > 0 else 0
