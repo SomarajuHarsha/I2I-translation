@@ -36,6 +36,7 @@ parser.add_argument("--dataset", type=str, default="selfie2anime",
                          "cezanne2photo, ukiyoe2photo, vangogh2photo, selfie2anime]")
 parser.add_argument("--cuda", action="store_true", help="Enables cuda")
 parser.add_argument("--model", type=str, help="model path")
+parser.add_argument("--a2b", type=int, default=1, help="model path")
 parser.add_argument("--outf", default="./results",
                     help="folder to output images. (default: `./results`).")
 parser.add_argument("--image-size", type=int, default=256,
@@ -68,46 +69,52 @@ dataset = ImageFolder(root=os.path.join(args.dataroot, args.dataset),
                            transforms.Resize(args.image_size),
                            transforms.ToTensor(),
                            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-                       ]),
-                       mode="test")
+                       ]))
+
 
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, pin_memory=True)
 
 try:
-    os.makedirs(os.path.join(args.outf, str(args.dataset), "A"))
-    os.makedirs(os.path.join(args.outf, str(args.dataset), "B"))
+    os.makedirs(os.path.join(args.outf, str(args.dataset)))
 except OSError:
     pass
 
 device = torch.device("cuda:0" if args.cuda else "cpu")
 
 # create model
-netG_A2B = ResnetGenerator(input_nc=3, output_nc=3, ngf=64, n_blocks=4, img_size=256, light=True).to(device)
-netG_B2A = ResnetGenerator(input_nc=3, output_nc=3, ngf=64, n_blocks=4, img_size=256, light=True).to(device)
+# netG_A2B = ResnetGenerator(input_nc=3, output_nc=3, ngf=64, n_blocks=4, img_size=256, light=True).to(device)
+# netG_B2A = ResnetGenerator(input_nc=3, output_nc=3, ngf=64, n_blocks=4, img_size=256, light=True).to(device)
+netG = ResnetGenerator(input_nc=3, output_nc=3, ngf=64, n_blocks=4, img_size=256, light=True).to(device)
 
 params = torch.load(args.model, map_location=torch.device(device))
 
 # Load state dicts
-netG_A2B.load_state_dict(params['genA2B'])
-netG_B2A.load_state_dict(params['genB2A'])
+# netG_A2B.load_state_dict(params['genA2B'])
+# netG_B2A.load_state_dict(params['genB2A'])
+netG.load_state_dict(params['genA2B'] if args.a2b else args.genB2A)
 
 # Set model mode
-netG_A2B.eval()
-netG_B2A.eval()
+# netG_A2B.eval()
+# netG_B2A.eval()
+netG.eval()
 
 progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
 
 for i, data in progress_bar:
     # get batch size data
-    real_image_A = data["A"].to(device)
-    real_image_B = data["B"].to(device)
+    # real_image_A = data["A"].to(device)
+    # real_image_B = data["B"].to(device)
+    # print(data)
+    real_image = data[0].to(device)
 
     # Generate output
-    fake_image_B, _ = netG_A2B(real_image_A)
-    fake_image_A, _ = netG_B2A(real_image_B)
+    # fake_image_B, _ = netG_A2B(real_image_A)
+    # fake_image_A, _ = netG_B2A(real_image_B)
+    fake_image, _, _ = netG(real_image)
 
     # Save image files
-    vutils.save_image(fake_image_A.detach(), f"{args.outf}/{args.dataset}/A/{i + 1:04d}.png", normalize=True)
-    vutils.save_image(fake_image_B.detach(), f"{args.outf}/{args.dataset}/B/{i + 1:04d}.png", normalize=True)
+    # vutils.save_image(fake_image_A.detach(), f"{args.outf}/{args.dataset}/A/{i + 1:04d}.png", normalize=True)
+    # vutils.save_image(fake_image_B.detach(), f"{args.outf}/{args.dataset}/B/{i + 1:04d}.png", normalize=True)
+    vutils.save_image(fake_image.detach(), f"{args.outf}/{args.dataset}/{i + 1:04d}.png", normalize=True)
 
     progress_bar.set_description(f"Generated images {i + 1} of {len(dataloader)}")
