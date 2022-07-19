@@ -51,7 +51,7 @@ def main():
           img = model.test_forward_transfer(img2, img1, a2b=False)
       imgs.append(img)
       names.append('output_{}'.format(idx2))
-    save_imgs(imgs, names, os.path.join(result_dir, '{}'.format(idx1)))
+    save_imgs(imgs, names, result_dir)
 
   return
 
