@@ -58,8 +58,8 @@ def get_data_loader_folder(input_folder, batch_size, train, new_size=None,
 # folder = '../datasets/horse2zebra/testB'
 # folder2 = 'touts_00'
 
-folder = opts['folder1']
-folder2 = opts['folder2']
+folder = opts.folder1
+folder2 = opts.folder2
 
 data = get_data_loader_folder(folder, 1, False)
 data2 = get_data_loader_folder(folder2, 1, False)
