@@ -56,6 +56,7 @@ input_dim = config['input_dim_a'] if opts.a2b else config['input_dim_b']
 # Load the inception networks if we need to compute IS or CIIS
 if opts.compute_IS or opts.compute_IS:
     inception = load_inception(opts.inception_b) if opts.a2b else load_inception(opts.inception_a)
+    inception.to(device)
     # freeze the inception models and set eval mode
     inception.eval()
     for param in inception.parameters():
@@ -74,7 +75,7 @@ state_dict = torch.load(opts.checkpoint)
 state_dict2 = torch.load(opts.checkpoint2)
 trainer.style_gen_a.load_state_dict(state_dict['a'])
 trainer.enc_a.load_state_dict(state_dict2['a'])
-trainer.enc_b.load_state_dict(state_dict2['a'])
+trainer.enc_b.load_state_dict(state_dict2['b'])
 trainer.style_gen_b.load_state_dict(state_dict['b'])
 
 
@@ -99,7 +100,7 @@ for i, (images, names) in enumerate(zip(data_loader, image_names)):
     style = trainer.style_gen_a(s) if opts.a2b else trainer.style_gen_b(s)
     # style = style_fixed if opts.synchronized else Variable(torch.randn(opts.num_style, style_dim, 1, 1).cuda(), volatile=True)
     for j in range(opts.num_style):
-        s = style[j].unsqueeze(0)
+        s = style
         outputs = decode(content, s)
         outputs = (outputs + 1) / 2.
         if opts.compute_IS or opts.compute_CIS:

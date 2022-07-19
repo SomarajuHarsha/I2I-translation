@@ -1,5 +1,8 @@
-python testbatch.py --config configs/selfie2anime.yaml --input_folder ../datasets/selfie2anime/testA --output_folder touts --checkpoint outputs/selfie2anime/checkpoints/gen_00200000.pt --checkpoint2 outputs/selfie2anime/checkpoints/enc_00200000.pt --inception_a weights-inception-2015-12-05-6726825d.pth
-
 weights-inception-2015-12-05-6726825d.pth
 
 https://github.com/mseitzer/pytorch-fid/releases/download/fid_weights/pt_inception-2015-12-05-6726825d.pth
+
+https://github.com/toshas/torch-fidelity/releases/download/v0.2.0/weights-inception-2015-12-05-6726825d.pth
+
+
+python testbatch.py --config configs/horse2zebra.yaml --output_only --num_style 1 --input_folder ../datasets/horse2zebra/testA --output_folder touts --checkpoint outputs/horse2zebra/checkpoints/gen_00370000.pt --checkpoint2 outputs/horse2zebra/checkpoints/enc_00370000.pt --inception_b pt_inception-2015-12-05-6726825d.pt

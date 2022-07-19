@@ -13,6 +13,7 @@ import yaml
 import numpy as np
 import torch.nn.init as init
 import time
+from torchvision.models import inception_v3
 # Methods
 # get_all_data_loaders      : primary data loader interface (load trainA, testA, trainB, testB)
 # get_data_loader_list      : list-based data loader
@@ -231,7 +232,7 @@ def load_vgg16(model_dir):
 
 def load_inception(model_path):
     state_dict = torch.load(model_path)
-    model = inception_v3(pretrained=False, transform_input=True)
+    model = inception_v3(pretrained=False, transform_input=True, , aux_logits=False)
     model.aux_logits = False
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, state_dict['fc.weight'].size(0))
