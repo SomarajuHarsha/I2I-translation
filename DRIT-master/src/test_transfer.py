@@ -38,8 +38,8 @@ def main():
   for idx1, img1 in enumerate(loader):
     print('{}/{}'.format(idx1, len(loader)))
     img1 = img1.cuda()
-    imgs = [img1]
-    names = ['input']
+    imgs = []
+    names = []
     for idx2, img2 in enumerate(loader_attr):
       if idx2 == opts.num:
         break
@@ -50,7 +50,7 @@ def main():
         else:
           img = model.test_forward_transfer(img2, img1, a2b=False)
       imgs.append(img)
-      names.append('output_{}'.format(idx2))
+      names.append('output_{}'.format(idx1))
     save_imgs(imgs, names, result_dir)
 
   return
